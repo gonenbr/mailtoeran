@@ -5,3 +5,4 @@ The MainActivity observers a live data form the repository, which signals that t
 Some thoughts: When I will implement the graph based on this data, I will probably change the data into queues.  This will also allow me to start using the collected data, before it is fully loaded.
 
 Note: A screenshot is attached to show the data that was collected (using debugger + breakpoint).
+![Uploading Screenshot 2024-03-10 at 23.02.33.png…]()
