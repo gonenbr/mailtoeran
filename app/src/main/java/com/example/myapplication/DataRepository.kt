@@ -2,6 +2,9 @@ package com.example.myapplication
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import java.io.DataInputStream
 import java.io.IOException
 
@@ -11,22 +14,20 @@ class DataRepository(private val channelArrays: Array<IntArray>) {
     val parsedData: LiveData<Array<IntArray>>
         get() = _parsedData
 
-    // Function to load data from file and then update the live data
-    fun loadDataFromFile(stream: DataInputStream) {
+
+    fun loadDataFromFile(stream: DataInputStream): Flow<Array<IntArray>> = flow {
         try {
             while (true) {
-                readRecord(stream, channelArrays) ?: break
+                emit(readRecord(stream, channelArrays) ?: break)
+                println("emitting: array 0 size: ${channelArrays[0].size}")
+                delay(100)
             }
         } catch (e: IOException) {
             e.printStackTrace()
         } finally {
             stream.close()
         }
-
-        _parsedData.postValue(channelArrays)
-        println("Data Repository finished reading channels data!!!")
     }
-
 
     private fun readRecord(stream: DataInputStream, channelArrays: Array<IntArray>): Array<IntArray>? {
 
