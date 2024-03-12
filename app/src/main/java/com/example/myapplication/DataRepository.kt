@@ -1,26 +1,27 @@
 package com.example.myapplication
 
+import android.content.Context
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 import java.io.DataInputStream
 import java.io.IOException
 
-class DataRepository(private val channelArrays: Array<IntArray>) {
+class DataRepository(private val context: Context) {
 
     private val _parsedData = MutableLiveData<Array<IntArray>>()
+    private val channelArrays = Array(16) { IntArray(0) }
+
     val parsedData: LiveData<Array<IntArray>>
         get() = _parsedData
 
 
-    fun loadDataFromFile(stream: DataInputStream): Flow<Array<IntArray>> = flow {
+    fun loadDataFromFile() {
+        val stream = getStream()
+
         try {
             while (true) {
-                emit(readRecord(stream, channelArrays) ?: break)
-                println("emitting: array 0 size: ${channelArrays[0].size}")
-                delay(100)
+                readRecord(stream, channelArrays)
+                _parsedData.postValue(channelArrays)
             }
         } catch (e: IOException) {
             e.printStackTrace()
@@ -29,7 +30,18 @@ class DataRepository(private val channelArrays: Array<IntArray>) {
         }
     }
 
-    private fun readRecord(stream: DataInputStream, channelArrays: Array<IntArray>): Array<IntArray>? {
+    private fun getStream(): DataInputStream {
+        return readBinaryFileFromResources(context, R.raw.x20)
+    }
+
+    private fun readBinaryFileFromResources(context: Context, resourceId: Int): DataInputStream {
+        return DataInputStream(context.resources.openRawResource(resourceId))
+    }
+
+    private fun readRecord(
+        stream: DataInputStream,
+        channelArrays: Array<IntArray>
+    ): Array<IntArray>? {
 
         try {
             while (true) {
@@ -54,7 +66,8 @@ class DataRepository(private val channelArrays: Array<IntArray>) {
                 val downSamplingFactor = stream.readByte().toInt() and 0xFF
 
                 // Read data section
-                val bytesToRead = recordLength - 7 // Subtracting the size of bytes before the actual data
+                val bytesToRead =
+                    recordLength - 7 // Subtracting the size of bytes before the actual data
                 val data = ByteArray(bytesToRead)
                 stream.readFully(data)
 
